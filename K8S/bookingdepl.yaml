@@ -1,0 +1,36 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booking
+  template:
+    metadata:
+      labels:
+        app: booking
+    spec:
+      containers:
+      - name: booking
+        image: mostafa321/booking:dev
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: sqlserver-credentials
+              key: SA_PASSWORD
+        - name: DOTNET_SYSTEM_GLOBALIZATION_INVARIANT
+          value: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-config
+data:
+  ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=Booking;User Id=sa;Password=P@ssw0rd"
+
+
