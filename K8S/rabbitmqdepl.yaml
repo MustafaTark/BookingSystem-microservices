@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-deployment
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management
+        ports:
+        - containerPort: 5672  # RabbitMQ main port
+        - containerPort: 15672 # RabbitMQ management UI port
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: "guest" # Change to your desired username
+        - name: RABBITMQ_DEFAULT_PASS
+          value: "guest" # Change to your desired password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    protocol: TCP
+    port: 5672
+    targetPort: 5672
+    nodePort: 30007 # Specific NodePort for RabbitMQ main port
+  - name: management
+    protocol: TCP
+    port: 15672
+    targetPort: 15672
+    nodePort: 30008 # Specific NodePort for RabbitMQ management UI port
+  type: NodePort

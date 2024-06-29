@@ -5,10 +5,12 @@ using Booking.Infrastructure.Data;
 using Booking.Infrastructure.Domain;
 using Booking.Infrastructure.Domain.Booking;
 using Carter;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +32,23 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddScoped<IRequestHandler<CreateBookingCommand, CreateBookingResult>, CreateBookingCommandHandller>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 
+builder.Services.AddMassTransit(config =>
+{
+    config.SetKebabCaseEndpointNameFormatter();
 
+    if (Assembly.GetExecutingAssembly() != null)
+        config.AddConsumers(Assembly.GetExecutingAssembly());
+
+    config.UsingRabbitMq((context, configurator) =>
+    {
+        configurator.Host(new Uri(builder.Configuration["MessageBroker:Host"]!), host =>
+        {
+            host.Username(builder.Configuration["MessageBroker:UserName"]!);
+            host.Password(builder.Configuration["MessageBroker:Password"]!);
+        });
+        configurator.ConfigureEndpoints(context);
+    });
+});
 
 builder.Services.AddCarter();
 //builder.Services.AddMediatR();
